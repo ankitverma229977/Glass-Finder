@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#25265e">
+<title>Glass Finder</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f2f4fb;
+  color:#182033;
+}
+header{
+  background:linear-gradient(135deg,#171936,#4b4ed5);
+  color:white;
+  padding:25px 18px;
+  border-radius:0 0 25px 25px;
+}
+header h1{margin:8px 0;font-size:30px}
+header p{font-size:14px;line-height:1.5}
+main{max-width:700px;margin:auto;padding:14px}
+.card{
+  background:white;
+  border:1px solid #e1e5ef;
+  border-radius:16px;
+  padding:17px;
+  margin-bottom:15px;
+  box-shadow:0 4px 15px #00000008;
+}
+h2{font-size:19px;margin:0 0 12px}
+label{
+  display:block;
+  font-size:13px;
+  font-weight:bold;
+  margin:12px 0 6px;
+}
+input,textarea,select{
+  width:100%;
+  padding:12px;
+  border:1px solid #d6dbea;
+  border-radius:10px;
+  font-size:15px;
+  background:white;
+}
+button{
+  border:0;
+  padding:12px 14px;
+  border-radius:10px;
+  font-weight:bold;
+  font-size:14px;
+  margin:8px 5px 0 0;
+  cursor:pointer;
+}
+.primary{background:#4b4ed5;color:white}
+.secondary{background:#eceeff;color:#3436a1}
+.danger{background:#fff0f0;color:#b42318}
+.small{font-size:12px;color:#687287;line-height:1.5}
+.result{
+  background:#f7f8ff;
+  border:1px solid #dce2ff;
+  border-radius:12px;
+  padding:13px;
+  margin-top:12px;
+  overflow-wrap:anywhere;
+}
+.result h3{margin:8px 0}
+.result p{font-size:14px;line-height:1.5}
+.badge{
+  display:inline-block;
+  background:#e5f8ed;
+  color:#13764d;
+  padding:5px 8px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+}
+.pending{background:#fff0d5;color:#915700}
+.item{
+  border-bottom:1px solid #e4e7ef;
+  padding:12px 0;
+  overflow-wrap:anywhere;
+}
+.item small{display:block;color:#687287;margin-top:5px}
+footer{text-align:center;padding:20px;color:#778096;font-size:12px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>📱 MOBILE ACCESSORY HELPER</div>
+  <h1>Glass Finder</h1>
+  <p>मोबाइल का मॉडल खोजो और उसके tempered glass की जानकारी देखो।</p>
+</header>
+
+<main>
+
+<section class="card">
+  <h2>🔎 ग्लास खोजें</h2>
+  <label for="search">मोबाइल मॉडल या मॉडल नंबर</label>
+  <input id="search" placeholder="यहाँ मोबाइल का नाम लिखें">
+  <div id="results" class="small" style="margin-top:10px">
+    खोजने के लिए मोबाइल का नाम लिखें।
+  </div>
+</section>
+
+<section class="card">
+  <h2>➕ नया मोबाइल जोड़ें</h2>
+  <p class="small">
+    मोबाइल और उसके glass code की जानकारी भरें।
+    एक ही code वाले मॉडल साथ में दिखाई देंगे।
+  </p>
+
+  <form id="modelForm">
+
+    <label for="brand">मोबाइल ब्रांड</label>
+    <input id="brand" required placeholder="जैसे Samsung">
+
+    <label for="model">मोबाइल मॉडल</label>
+    <input id="model" required placeholder="जैसे पूरा मॉडल नाम">
+
+    <label for="number">मॉडल नंबर</label>
+    <input id="number" placeholder="यदि पता हो">
+
+    <label for="glass">ग्लास कोड / टाइप</label>
+    <input id="glass" required placeholder="जैसे G-001">
+
+    <label for="verified">क्या ग्लास फिट होना verify किया है?</label>
+    <select id="verified">
+      <option value="no">अभी verify नहीं किया</option>
+      <option value="yes">हाँ, फिट चेक किया है</option>
+    </select>
+
+    <label for="notes">नोट (वैकल्पिक)</label>
+    <textarea id="notes" rows="2" placeholder="अन्य जानकारी"></textarea>
+
+    <button class="primary" type="submit">मॉडल सेव करें</button>
+    <button class="secondary" type="reset">फॉर्म साफ करें</button>
+
+    <p id="message" class="small"></p>
+  </form>
+</section>
+
+<section class="card">
+  <h2>📚 मेरा डेटाबेस <span id="count"></span></h2>
+
+  <button class="secondary" id="backup">बैकअप डाउनलोड करें</button>
+  <button class="secondary" id="restore">बैकअप इम्पोर्ट करें</button>
+  <input id="backupFile" type="file" accept=".json,application/json" hidden>
+
+  <p class="small">
+    डेटा इसी ब्राउज़र में सेव होता है। समय-समय पर बैकअप डाउनलोड करें।
+  </p>
+
+  <div id="modelList"></div>
+
+  <button class="danger" id="deleteAll">सारा डेटा मिटाएँ</button>
+</section>
+
+<section class="card">
+  <h2>⚠️ जरूरी जानकारी</h2>
+  <p class="small">
+    इस शुरुआती ऐप में हजारों verified मोबाइल मॉडलों का डेटा पहले से नहीं है।
+    आपको मोबाइल और ग्लास की सही जानकारी जोड़नी होगी।
+    केवल एक जैसे नाम या स्क्रीन साइज़ के आधार पर ग्लास compatible न मानें।
+  </p>
+</section>
+
+</main>
+
+<footer>Glass Finder · शुरुआती संस्करण</footer>
+
+<script>
+const STORAGE_KEY = "glassFinderDatabaseV1";
+let models = [];
+
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  if (Array.isArray(saved)) models = saved;
+} catch(e) {
+  models = [];
+}
+
+const $ = id => document.getElementById(id);
+
+function clean(value) {
+  return String(value || "").trim();
+}
+
+function norm(value) {
+  return clean(value).toLocaleLowerCase();
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[char]);
+}
+
+function saveDatabase() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(models));
+    renderList();
+    searchModels();
+  } catch(e) {
+    alert("डेटा सेव नहीं हो पाया। कृपया बैकअप लेकर जगह खाली करें।");
+  }
+}
+
+function findSameGlass(model) {
+  return models.filter(item =>
+    item.id !== model.id &&
+    norm(item.glass) === norm(model.glass)
+  );
+}
+
+function searchModels() {
+  const query = norm($("search").value);
+  const box = $("results");
+
+  if (!query) {
+    box.className = "small";
+    box.textContent = "खोजने के लिए मोबाइल का नाम लिखें।";
+    return;
+  }
+
+  const found = models.filter(item =>
+    [item.brand, item.model, item.number, item.glass, item.notes]
+      .some(value => norm(value).includes(query))
+  ).slice(0, 50);
+
+  if (!found.length) {
+    box.className = "result";
+    box.innerHTML =
+      "<b>कोई मॉडल नहीं मिला।</b>" +
+      "<p class='small'>नीचे फॉर्म में मॉडल जोड़ सकते हैं।</p>";
+    return;
+  }
+
+  box.className = "";
+
+  box.innerHTML = found.map(item => {
+    const same = findSameGlass(item);
+    const verified = item.verified === "yes";
+
+    return `
+      <div class="result">
+        <span class="badge ${verified ? "" : "pending"}">
+          ${verified ? "✓ फिट verify किया गया" : "! अभी verify नहीं"}
+        </span>
+
+        <h3>${escapeHTML(item.brand)} ${escapeHTML(item.model)}</h3>
+
+        <p><b>मॉडल नंबर:</b>
+        ${escapeHTML(item.number || "नहीं जोड़ा")}</p>
+
+        <p><b>ग्लास कोड:</b>
+        ${escapeHTML(item.glass)}</p>
+
+        <p><b>नोट:</b>
+        ${escapeHTML(item.notes || "—")}</p>
+
+        <p><b>इसी code वाले दूसरे मॉडल:</b><br>
+        ${
+          same.length
+          ? same.map(x =>
+              escapeHTML(x.brand + " " + x.model)
+            ).join(", ")
+          : "अभी कोई दूसरा मॉडल नहीं"
+        }</p>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderList() {
+  $("count").textContent = "(" + models.length + ")";
+
+  if (!models.length) {
+    $("modelList").innerHTML =
+      "<p class='small'>अभी कोई मॉडल सेव नहीं है।</p>";
+    return;
+  }
+
+  $("modelList").innerHTML = models.map(item => `
+    <div class="item">
+      <b>${escapeHTML(item.brand)} ${escapeHTML(item.model)}</b>
+      <small>
+        मॉडल नंबर: ${escapeHTML(item.number || "—")}<br>
+        ग्लास: ${escapeHTML(item.glass)}<br>
+        ${item.verified === "yes" ? "Verified" : "Pending"}
+      </small>
+      <button class="secondary"
+        onclick="editModel('${item.id}')">Edit</button>
+      <button class="danger"
+        onclick="deleteModel('${item.id}')">Delete</button>
+    </div>
+  `).join("");
+}
+
+$("search").addEventListener("input", searchModels);
+
+$("modelForm").addEventListener("submit", event => {
+  event.preventDefault();
+
+  const item = {
+    id: Date.now().toString() + Math.random().toString(16).slice(2),
+    brand: clean($("brand").value),
+    model: clean($("model").value),
+    number: clean($("number").value),
+    glass: clean($("glass").value),
+    verified: $("verified").value,
+    notes: clean($("notes").value)
+  };
+
+  const duplicate = models.some(old =>
+    norm(old.brand) === norm(item.brand) &&
+    norm(old.model) === norm(item.model) &&
+    norm(old.number) === norm(item.number)
+  );
+
+  if (duplicate) {
+    $("message").textContent =
+      "यह मॉडल पहले से मौजूद है।";
+    return;
+  }
+
+  models.push(item);
+  saveDatabase();
+  $("modelForm").reset();
+
+  $("message").textContent =
+    "मॉडल सेव हो गया! अब ऊपर खोजकर देखें।";
+});
+
+window.deleteModel = id => {
+  if (!confirm("क्या यह मॉडल मिटाना चाहते हैं?")) return;
+  models = models.filter(item => item.id !== id);
+  saveDatabase();
+};
+
+window.editModel = id => {
+  const item = models.find(model => model.id === id);
+  if (!item) return;
+
+  $("brand").value = item.brand;
+  $("model").value = item.model;
+  $("number").value = item.number;
+  $("glass").value = item.glass;
+  $("verified").value = item.verified;
+  $("notes").value = item.notes;
+
+  models = models.filter(model => model.id !== id);
+  saveDatabase();
+
+  $("message").textContent =
+    "जानकारी फॉर्म में है। बदलाव करके फिर सेव करें।";
+
+  window.scrollTo({top:0, behavior:"smooth"});
+};
+
+$("backup").addEventListener("click", () => {
+  const blob = new Blob([
+    JSON.stringify({
+      app:"Glass Finder",
+      version:1,
+      models:models
+    }, null, 2)
+  ], {type:"application/json"});
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "glass-finder-backup.json";
+  link.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+$("restore").addEventListener("click", () => {
+  $("backupFile").click();
+});
+
+$("backupFile").addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const json = JSON.parse(await file.text());
+    const imported = Array.isArray(json) ? json : json.models;
+
+    if (!Array.isArray(imported)) throw new Error("Invalid backup");
+
+    if (confirm("बैकअप के मॉडल मौजूदा डेटा में जोड़ें?")) {
+      imported.forEach(item => {
+        if (!item.brand || !item.model || !item.glass) return;
+
+        const duplicate = models.some(old =>
+          norm(old.brand) === norm(item.brand) &&
+          norm(old.model) === norm(item.model) &&
+          norm(old.number) === norm(item.number)
+        );
+
+        if (!duplicate) {
+          models.push({
+            id: item.id || Date.now().toString() + Math.random(),
+            brand: clean(item.brand),
+            model: clean(item.model),
+            number: clean(item.number),
+            glass: clean(item.glass),
+            verified: item.verified === "yes" ? "yes" : "no",
+            notes: clean(item.notes)
+          });
+        }
+      });
+
+      saveDatabase();
+      alert("बैकअप इम्पोर्ट हो गया!");
+    }
+  } catch(e) {
+    alert("यह सही Glass Finder बैकअप फाइल नहीं है।");
+  }
+
+  event.target.value = "";
+});
+
+$("deleteAll").addEventListener("click", () => {
+  if (!confirm("सावधान! पूरा डेटाबेस मिट जाएगा। क्या जारी रखें?")) return;
+  models = [];
+  saveDatabase();
+});
+
+renderList();
+searchModels();
+</script>
+
+</body>
+</html>
